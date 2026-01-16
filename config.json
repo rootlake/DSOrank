@@ -1,0 +1,91 @@
+{
+  "objects": {
+    "M31": {
+      "folder": "M31",
+      "images": [
+        "dba-821.jpg",
+        "dlf-360.jpg",
+        "dlm-747.jpg",
+        "dlm-748.jpg",
+        "dma-165.jpg",
+        "dma-166.jpg",
+        "dta-447.jpg",
+        "edh-697.jpg",
+        "ege-384.jpg",
+        "ege-385.jpg",
+        "ekn-181.jpg",
+        "eps-457.jpg"
+      ],
+      "gridColumns": 6
+    },
+    "M42": {
+      "folder": "M42",
+      "images": [
+        "dba-173.jpg",
+        "dfa-347.jpg",
+        "dfa-885.jpg",
+        "dlf-945.jpg",
+        "dlm-304.jpg",
+        "dlm-305.jpg",
+        "dma-428.jpg",
+        "dma-429.jpg",
+        "dmc-833.jpg",
+        "dta-277.jpg",
+        "ecr-273.jpg",
+        "edh-585.jpg",
+        "ege-480.jpg",
+        "egw-328.jpg",
+        "ekn-224.jpg",
+        "ela-990.jpg",
+        "emi-205.jpg",
+        "eps-174.jpg",
+        "mrl-935.jpg"
+      ],
+      "gridColumns": 6
+    },
+    "M45": {
+      "folder": "M45",
+      "images": [
+        "dba-257.jpg",
+        "dde-336.jpg",
+        "dfa-254.jpg",
+        "dfa-512.png",
+        "dim-554.jpg",
+        "dlf-423.jpg",
+        "dlm-941.jpg",
+        "dma-720.jpg",
+        "dmc-107.jpg",
+        "dta-628.png",
+        "dzh-295.jpg",
+        "ecr-705.jpg",
+        "edh-188.jpg",
+        "ege-583.jpg",
+        "egw-965.jpg",
+        "ekn-962.jpg",
+        "ela-326.jpg",
+        "emi-459.jpg",
+        "eps-603.jpg",
+        "lak-242.jpg"
+      ],
+      "gridColumns": 5
+    },
+    "M45_2026": {
+      "folder": "M45_2026",
+      "images": [
+        "bcw-525.jpg",
+        "bdj-002.jpg",
+        "bec-694.jpg",
+        "fam-973.jpg",
+        "fbb-682.jpg",
+        "fbh-459.jpg",
+        "fcc-462.jpg",
+        "fcg-927.jpg",
+        "fcs-498.jpg",
+        "fkh-821.jpg",
+        "flw-564.jpg",
+        "frd-650.jpg"
+      ],
+      "gridColumns": 4
+    }
+  }
+}
