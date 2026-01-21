@@ -21,9 +21,17 @@
     "M31_2026": {
       "folder": "M31_2026",
       "images": [
-        "bcw.jpg",
-        "bdj.jpg",
-        "fjh.jpg"
+        "bcw-608.jpg",
+        "bdj-704.jpg",
+        "fam-136.jpg",
+        "fbh-977.jpg",
+        "fcc-049.jpg",
+        "fcg-956.jpg",
+        "fcs-069.jpg",
+        "fjh-507.jpg",
+        "fkh-467.jpg",
+        "flw-524.jpg",
+        "frd-086.jpg"
       ],
       "gridColumns": 3
     },
@@ -93,6 +101,7 @@
         "fck-676.jpg",
         "fcs-498.jpg",
         "fjh-229.jpg",
+        "fjh.jpg",
         "fkh-821.jpg",
         "flw-564.jpg",
         "frd-650.jpg",
