@@ -47,17 +47,23 @@
                 container.style.setProperty('--grid-cols', objectConfig.gridColumns);
                 container.style.gridTemplateColumns = `repeat(${objectConfig.gridColumns}, 1fr)`;
                 
-                // Calculate max height to fit all images without scrolling
-                const numImages = objectConfig.images.length;
+                // Calculate image size to show 3.5 rows on screen
                 const numCols = objectConfig.gridColumns;
-                const numRows = Math.ceil(numImages / numCols);
-                const gap = 10; // gap in pixels
-                const padding = 40; // body padding
-                const controlsHeight = 80; // approximate controls height
+                const rowsToShow = 3.5; // Show 3.5 rows
+                const gap = 5; // gap in pixels
+                const padding = 10; // body padding (5px * 2 sides)
+                const controlsHeight = 60; // approximate controls height
                 const availableHeight = window.innerHeight - padding - controlsHeight;
+                const availableWidth = window.innerWidth - (padding * 2);
                 
-                // Set max height for grid to fit all rows
-                container.style.maxHeight = `${availableHeight}px`;
+                // Calculate size per image
+                const rowHeight = (availableHeight - (gap * (rowsToShow - 1))) / rowsToShow;
+                const colWidth = (availableWidth - (gap * (numCols - 1))) / numCols;
+                const imageSize = Math.min(rowHeight, colWidth);
+                
+                // Set grid to use fixed sizes
+                container.style.gridAutoRows = `${imageSize}px`;
+                container.style.gap = `${gap}px`;
                 
                 // Load images using shared module
                 window.loadImages(objectConfig);
