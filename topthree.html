@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Three Winners - DSO Class Compare</title>
+    <link href="./styles.css" rel="stylesheet">
+    <script src="./imageLoader.js"></script>
+</head>
+<body>
+    <div class="controls">
+        <select id="objectSelect" onchange="onObjectChange()">
+            <option value="M31">M31</option>
+            <option value="M42">M42</option>
+            <option value="M45">M45</option>
+            <option value="M45_2026" selected>M45_2026</option>
+        </select>
+        <button id="toggleInput" onclick="toggleInputPanel()">Show Input Panel</button>
+        <button id="generateRandom" onclick="generateRandomRankings()">Generate Random Test Data</button>
+        <button id="calculateWinners" onclick="calculateWinners()">Calculate Winners</button>
+    </div>
+
+    <div id="inputPanel" class="input-panel" style="display: none;">
+        <h3>Enter Rankings (one per line)</h3>
+        <textarea id="rankingsInput" placeholder="M45_2026,525,002,694,973...&#10;M45_2026,002,525,694,973...&#10;..."></textarea>
+        <div class="input-info">Format: object,number,number,... (one ranking per line)</div>
+    </div>
+
+    <div id="podiumContainer" class="podium-container">
+        <div class="podium-placeholder">Select an object and calculate winners to see the podium</div>
+    </div>
+
+    <script>
+        let currentObjectConfig = null;
+
+        async function onObjectChange() {
+            const selected = document.getElementById('objectSelect').value;
+            try {
+                currentObjectConfig = await window.imageLoader.loadObjectConfig(selected);
+                // Clear podium when object changes
+                document.getElementById('podiumContainer').innerHTML = '<div class="podium-placeholder">Select an object and calculate winners to see the podium</div>';
+            } catch (error) {
+                console.error(`Error loading ${selected}:`, error);
+                alert(`Error loading ${selected}. Please check the console for details.`);
+            }
+        }
+
+        function toggleInputPanel() {
+            const panel = document.getElementById('inputPanel');
+            const button = document.getElementById('toggleInput');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+                button.textContent = 'Hide Input Panel';
+            } else {
+                panel.style.display = 'none';
+                button.textContent = 'Show Input Panel';
+            }
+        }
+
+        function generateRandomRankings() {
+            if (!currentObjectConfig) {
+                alert('Please select an object first');
+                return;
+            }
+
+            const objectName = currentObjectConfig.objectName;
+            const images = currentObjectConfig.images;
+            const filenameNumbers = images.map(img => img.filenameNumber);
+            
+            // Generate 10 random rankings
+            const rankings = [];
+            for (let i = 0; i < 10; i++) {
+                const shuffled = [...filenameNumbers];
+                // Fisher-Yates shuffle
+                for (let j = shuffled.length - 1; j > 0; j--) {
+                    const k = Math.floor(Math.random() * (j + 1));
+                    [shuffled[j], shuffled[k]] = [shuffled[k], shuffled[j]];
+                }
+                rankings.push(`${objectName},${shuffled.join(',')}`);
+            }
+            
+            document.getElementById('rankingsInput').value = rankings.join('\n');
+        }
+
+        function parseRanking(rankingString) {
+            const parts = rankingString.trim().split(',');
+            if (parts.length < 2) {
+                throw new Error('Invalid format: expected "object,number,number,..."');
+            }
+            
+            const objectName = parts[0];
+            const numbers = parts.slice(1);
+            
+            return { objectName, numbers };
+        }
+
+        function calculatePoints(rankings, objectName) {
+            if (!currentObjectConfig || currentObjectConfig.objectName !== objectName) {
+                throw new Error(`Object ${objectName} not loaded`);
+            }
+
+            const numImages = currentObjectConfig.images.length;
+            const pointsMap = {}; // filenameNumber -> total points
+
+            // Initialize points map
+            currentObjectConfig.images.forEach(img => {
+                pointsMap[img.filenameNumber] = 0;
+            });
+
+            // Process each ranking
+            rankings.forEach(ranking => {
+                const { numbers } = parseRanking(ranking);
+                
+                numbers.forEach((number, index) => {
+                    const rank = index + 1; // 1st = 1, 2nd = 2, etc.
+                    const points = numImages - rank + 1; // 1st = N points, last = 1 point
+                    
+                    if (pointsMap.hasOwnProperty(number)) {
+                        pointsMap[number] += points;
+                    }
+                });
+            });
+
+            // Convert to array and sort by points
+            const results = Object.entries(pointsMap).map(([filenameNumber, points]) => {
+                const imageData = currentObjectConfig.images.find(img => img.filenameNumber === filenameNumber);
+                return {
+                    filenameNumber,
+                    filename: imageData.filename,
+                    points,
+                    initials: imageData.initials
+                };
+            });
+
+            results.sort((a, b) => b.points - a.points);
+            return results;
+        }
+
+        function calculateWinners() {
+            if (!currentObjectConfig) {
+                alert('Please select an object first');
+                return;
+            }
+
+            const input = document.getElementById('rankingsInput').value.trim();
+            if (!input) {
+                alert('Please enter rankings or generate random test data');
+                return;
+            }
+
+            const lines = input.split('\n').filter(line => line.trim());
+            if (lines.length === 0) {
+                alert('No rankings found');
+                return;
+            }
+
+            try {
+                const objectName = currentObjectConfig.objectName;
+                const results = calculatePoints(lines, objectName);
+                
+                // Get top 3
+                const topThree = results.slice(0, 3);
+                
+                displayPodium(topThree, results);
+            } catch (error) {
+                alert(`Error calculating winners: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        function displayPodium(topThree, allResults) {
+            const container = document.getElementById('podiumContainer');
+            
+            if (topThree.length < 3) {
+                container.innerHTML = `<div class="podium-placeholder">Not enough images for podium (need at least 3)</div>`;
+                return;
+            }
+
+            const [first, second, third] = topThree;
+            const objectName = currentObjectConfig.objectName;
+            const folder = currentObjectConfig.folder;
+
+            container.innerHTML = `
+                <div class="podium">
+                    <div class="podium-place second">
+                        <div class="podium-image">
+                            <img src="${folder}/${second.filename}" alt="2nd place">
+                        </div>
+                        <div class="podium-info">
+                            <div class="podium-badge">2nd</div>
+                            <div class="podium-number">${second.filenameNumber}</div>
+                            <div class="podium-points">${second.points} points</div>
+                        </div>
+                    </div>
+                    <div class="podium-place first">
+                        <div class="podium-image">
+                            <img src="${folder}/${first.filename}" alt="1st place">
+                        </div>
+                        <div class="podium-info">
+                            <div class="podium-badge">1st</div>
+                            <div class="podium-number">${first.filenameNumber}</div>
+                            <div class="podium-points">${first.points} points</div>
+                        </div>
+                    </div>
+                    <div class="podium-place third">
+                        <div class="podium-image">
+                            <img src="${folder}/${third.filename}" alt="3rd place">
+                        </div>
+                        <div class="podium-info">
+                            <div class="podium-badge">3rd</div>
+                            <div class="podium-number">${third.filenameNumber}</div>
+                            <div class="podium-points">${third.points} points</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-summary">
+                    <h3>Full Results</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Number</th>
+                                <th>Points</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${allResults.map((result, index) => `
+                                <tr>
+                                    <td>${index + 1}</td>
+                                    <td>${result.filenameNumber}</td>
+                                    <td>${result.points}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Initial load
+        window.addEventListener('load', () => onObjectChange());
+    </script>
+</body>
+</html>

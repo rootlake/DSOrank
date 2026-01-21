@@ -130,6 +130,7 @@ const CONFIG = {
     "M45_2026": {
       "folder": "M45_2026",
       "images": [
+        "bap-133.jpg",
         "bcw-525.jpg",
         "bdj-002.jpg",
         "bec-694.jpg",
@@ -138,10 +139,12 @@ const CONFIG = {
         "fbh-459.jpg",
         "fcc-462.jpg",
         "fcg-927.jpg",
+        "fck-676.jpg",
         "fcs-498.jpg",
         "fkh-821.jpg",
         "flw-564.jpg",
-        "frd-650.jpg"
+        "frd-650.jpg",
+        "fss-399.jpg"
       ],
       "gridColumns": 4
     }
