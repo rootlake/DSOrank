@@ -6,6 +6,33 @@
     <title>Top Three Winners - DSO Class Compare</title>
     <link href="./styles.css" rel="stylesheet">
     <script src="./imageLoader.js"></script>
+    <script>
+        // Student names mapping - will be loaded from JSON
+        let studentNames = {};
+        
+        // Load student names
+        async function loadStudentNames() {
+            try {
+                const response = await fetch('student-names.json');
+                studentNames = await response.json();
+            } catch (error) {
+                console.warn('Could not load student-names.json, using initials only');
+                studentNames = {};
+            }
+        }
+        
+        // Get student name from initials, fallback to initials if not found
+        function getStudentName(objectName, initials) {
+            if (studentNames[objectName] && studentNames[objectName][initials.toUpperCase()]) {
+                const name = studentNames[objectName][initials.toUpperCase()];
+                return name || initials.toUpperCase();
+            }
+            return initials.toUpperCase();
+        }
+        
+        // Load names on page load
+        loadStudentNames();
+    </script>
 </head>
 <body>
     <div class="controls">
@@ -15,15 +42,16 @@
             <option value="M45">M45</option>
             <option value="M45_2026" selected>M45_2026</option>
         </select>
-        <button id="toggleInput" onclick="toggleInputPanel()">Show Input Panel</button>
+        <button id="toggleInput" onclick="toggleInputPanel()">Hide Input Panel</button>
         <button id="generateRandom" onclick="generateRandomRankings()">Generate Random Test Data</button>
         <button id="calculateWinners" onclick="calculateWinners()">Calculate Winners</button>
+        <button id="toggleInitials" onclick="toggleInitials()" style="display: none;">Show Initials</button>
     </div>
 
-    <div id="inputPanel" class="input-panel" style="display: none;">
-        <h3>Enter Rankings (one per line)</h3>
-        <textarea id="rankingsInput" placeholder="M45_2026,525,002,694,973...&#10;M45_2026,002,525,694,973...&#10;..."></textarea>
-        <div class="input-info">Format: object,number,number,... (one ranking per line)</div>
+    <div id="inputPanel" class="input-panel" style="display: block;">
+        <h3>Enter Student Rankings (paste one per line)</h3>
+        <textarea id="rankingsInput" placeholder="M45_2026,525,002,694,973,682,459,462,927,498,821,564,650&#10;M45_2026,002,525,694,973,682,459,462,927,498,821,564,650&#10;M45_2026,694,525,002,973,682,459,462,927,498,821,564,650&#10;..."></textarea>
+        <div class="input-info">Format: object,number,number,... (one ranking per line). Paste all student submissions here.</div>
     </div>
 
     <div id="podiumContainer" class="podium-container">
@@ -32,6 +60,9 @@
 
     <script>
         let currentObjectConfig = null;
+        let topThreeWinners = [];
+        let currentZoomIndex = -1;
+        let showInitials = true;
 
         async function onObjectChange() {
             const selected = document.getElementById('objectSelect').value;
@@ -156,10 +187,46 @@
 
             try {
                 const objectName = currentObjectConfig.objectName;
+                
+                // Validate all rankings are for the same object
+                const invalidLines = [];
+                lines.forEach((line, index) => {
+                    try {
+                        const parsed = parseRanking(line);
+                        if (parsed.objectName !== objectName) {
+                            invalidLines.push(`Line ${index + 1}: wrong object (${parsed.objectName} vs ${objectName})`);
+                        }
+                    } catch (e) {
+                        invalidLines.push(`Line ${index + 1}: ${e.message}`);
+                    }
+                });
+                
+                if (invalidLines.length > 0) {
+                    alert(`Invalid rankings found:\n${invalidLines.join('\n')}`);
+                    return;
+                }
+                
                 const results = calculatePoints(lines, objectName);
                 
                 // Get top 3
                 const topThree = results.slice(0, 3);
+                
+                console.log(`Processed ${lines.length} rankings`);
+                console.log('Top 3:', topThree);
+                
+                // Store top three globally for zoom functionality
+                topThreeWinners = topThree;
+                allResultsCache = results;
+                showInitials = true;
+                
+                // Show/hide initials button
+                const toggleBtn = document.getElementById('toggleInitials');
+                if (topThree.length > 0) {
+                    toggleBtn.style.display = 'inline-block';
+                    toggleBtn.textContent = 'Hide Initials';
+                } else {
+                    toggleBtn.style.display = 'none';
+                }
                 
                 displayPodium(topThree, results);
             } catch (error) {
@@ -182,32 +249,32 @@
 
             container.innerHTML = `
                 <div class="podium">
-                    <div class="podium-place second">
+                    <div class="podium-place second" onclick="zoomToWinner(1)">
                         <div class="podium-image">
                             <img src="${folder}/${second.filename}" alt="2nd place">
                         </div>
                         <div class="podium-info">
-                            <div class="podium-badge">2nd</div>
+                            <div class="podium-badge">2nd${showInitials ? ` <span class="podium-initials podium-silver">${getStudentName(objectName, second.initials)}</span>` : ''}</div>
                             <div class="podium-number">${second.filenameNumber}</div>
                             <div class="podium-points">${second.points} points</div>
                         </div>
                     </div>
-                    <div class="podium-place first">
+                    <div class="podium-place first" onclick="zoomToWinner(0)">
                         <div class="podium-image">
                             <img src="${folder}/${first.filename}" alt="1st place">
                         </div>
                         <div class="podium-info">
-                            <div class="podium-badge">1st</div>
+                            <div class="podium-badge">1st${showInitials ? ` <span class="podium-initials podium-gold">${getStudentName(objectName, first.initials)}</span>` : ''}</div>
                             <div class="podium-number">${first.filenameNumber}</div>
                             <div class="podium-points">${first.points} points</div>
                         </div>
                     </div>
-                    <div class="podium-place third">
+                    <div class="podium-place third" onclick="zoomToWinner(2)">
                         <div class="podium-image">
                             <img src="${folder}/${third.filename}" alt="3rd place">
                         </div>
                         <div class="podium-info">
-                            <div class="podium-badge">3rd</div>
+                            <div class="podium-badge">3rd${showInitials ? ` <span class="podium-initials podium-bronze">${getStudentName(objectName, third.initials)}</span>` : ''}</div>
                             <div class="podium-number">${third.filenameNumber}</div>
                             <div class="podium-points">${third.points} points</div>
                         </div>
@@ -236,6 +303,105 @@
                 </div>
             `;
         }
+
+        function toggleInitials() {
+            showInitials = !showInitials;
+            const btn = document.getElementById('toggleInitials');
+            btn.textContent = showInitials ? 'Hide Initials' : 'Show Initials';
+            
+            // Re-render podium to show/hide initials
+            if (topThreeWinners.length > 0) {
+                const container = document.getElementById('podiumContainer');
+                const summary = container.querySelector('.podium-summary');
+                const allResults = Array.from(container.querySelectorAll('.podium-summary tbody tr')).map((row, idx) => {
+                    const cells = row.querySelectorAll('td');
+                    return {
+                        filenameNumber: cells[1].textContent,
+                        points: parseInt(cells[2].textContent),
+                        initials: topThreeWinners.find(w => w.filenameNumber === cells[1].textContent)?.initials || 
+                                 currentObjectConfig.images.find(img => img.filenameNumber === cells[1].textContent)?.initials || ''
+                    };
+                });
+                displayPodium(topThreeWinners, allResults);
+            }
+        }
+
+        function zoomToWinner(index) {
+            if (index < 0 || index >= topThreeWinners.length) return;
+            
+            currentZoomIndex = index;
+            showZoomedWinner(index);
+        }
+
+        function showZoomedWinner(index) {
+            const winner = topThreeWinners[index];
+            const folder = currentObjectConfig.folder;
+            const objectName = currentObjectConfig.objectName;
+            const rank = index === 0 ? '1st' : index === 1 ? '2nd' : '3rd';
+            const borderClass = index === 0 ? 'zoom-gold' : index === 1 ? 'zoom-silver' : 'zoom-bronze';
+            
+            // Create or get overlay
+            let overlay = document.querySelector('.zoom-overlay');
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.className = 'zoom-overlay';
+                document.body.appendChild(overlay);
+            }
+            
+            overlay.innerHTML = `
+                <div class="zoom-container ${borderClass}">
+                    <div class="zoom-image">
+                        <img src="${folder}/${winner.filename}" alt="${rank} place">
+                    </div>
+                    <div class="zoom-info">
+                        <div class="zoom-badge">${rank}${showInitials ? ` <span class="zoom-initials ${borderClass === 'zoom-gold' ? 'zoom-initials-gold' : borderClass === 'zoom-silver' ? 'zoom-initials-silver' : 'zoom-initials-bronze'}">${getStudentName(objectName, winner.initials)}</span>` : ''}</div>
+                        <div class="zoom-number">${winner.filenameNumber}</div>
+                        <div class="zoom-points">${winner.points} points</div>
+                    </div>
+                    <div class="zoom-help">Use ← → arrow keys to navigate • Press Escape to close</div>
+                </div>
+            `;
+            
+            overlay.classList.add('active');
+        }
+
+        function closeZoom() {
+            const overlay = document.querySelector('.zoom-overlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+                setTimeout(() => {
+                    overlay.innerHTML = '';
+                }, 200);
+            }
+            currentZoomIndex = -1;
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            const overlay = document.querySelector('.zoom-overlay');
+            if (!overlay || !overlay.classList.contains('active')) return;
+            
+            switch(e.key) {
+                case 'Escape':
+                    e.preventDefault();
+                    closeZoom();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    if (currentZoomIndex > 0) {
+                        currentZoomIndex--;
+                        showZoomedWinner(currentZoomIndex);
+                    }
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    if (currentZoomIndex < topThreeWinners.length - 1) {
+                        currentZoomIndex++;
+                        showZoomedWinner(currentZoomIndex);
+                    }
+                    break;
+            }
+        });
 
         // Initial load
         window.addEventListener('load', () => onObjectChange());

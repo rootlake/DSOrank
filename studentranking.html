@@ -44,7 +44,20 @@
                 
                 // Update grid layout
                 const container = document.getElementById('imageContainer');
+                container.style.setProperty('--grid-cols', objectConfig.gridColumns);
                 container.style.gridTemplateColumns = `repeat(${objectConfig.gridColumns}, 1fr)`;
+                
+                // Calculate max height to fit all images without scrolling
+                const numImages = objectConfig.images.length;
+                const numCols = objectConfig.gridColumns;
+                const numRows = Math.ceil(numImages / numCols);
+                const gap = 10; // gap in pixels
+                const padding = 40; // body padding
+                const controlsHeight = 80; // approximate controls height
+                const availableHeight = window.innerHeight - padding - controlsHeight;
+                
+                // Set max height for grid to fit all rows
+                container.style.maxHeight = `${availableHeight}px`;
                 
                 // Load images using shared module
                 window.loadImages(objectConfig);

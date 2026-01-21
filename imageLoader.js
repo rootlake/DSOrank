@@ -76,6 +76,14 @@ const CONFIG = {
       ],
       "gridColumns": 6
     },
+    "M31_2026": {
+      "folder": "M31_2026",
+      "images": [
+        "bap.jpg",
+        "bdj.jpg"
+      ],
+      "gridColumns": 3
+    },
     "M42": {
       "folder": "M42",
       "images": [
@@ -146,7 +154,7 @@ const CONFIG = {
         "frd-650.jpg",
         "fss-399.jpg"
       ],
-      "gridColumns": 4
+      "gridColumns": 5
     }
   }
 };
