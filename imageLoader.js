@@ -82,6 +82,7 @@ const CONFIG = {
         "bcw-608.jpg",
         "bdj-704.jpg",
         "fam-136.jpg",
+        "fbb.jpg",
         "fbh-977.jpg",
         "fcc-049.jpg",
         "fcg-956.jpg",
@@ -89,7 +90,8 @@ const CONFIG = {
         "fjh-507.jpg",
         "fkh-467.jpg",
         "flw-524.jpg",
-        "frd-086.jpg"
+        "frd-086.jpg",
+        "fss.jpg"
       ],
       "gridColumns": 3
     },
@@ -117,6 +119,17 @@ const CONFIG = {
         "mrl-935.jpg"
       ],
       "gridColumns": 6
+    },
+    "M42_2026": {
+      "folder": "M42_2026",
+      "images": [
+        "bcw.jpg",
+        "bdj.jpg",
+        "fbh.jpg",
+        "fcc.jpg",
+        "fcg.jpg"
+      ],
+      "gridColumns": 3
     },
     "M45": {
       "folder": "M45",
