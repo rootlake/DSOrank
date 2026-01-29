@@ -20,8 +20,15 @@ body {
     cursor: move;
     user-select: none;
     transition: all 0.3s ease;
-    aspect-ratio: 1;
     overflow: visible;
+}
+
+.image-card.image-square {
+    aspect-ratio: 1;
+}
+
+.image-card.image-landscape {
+    aspect-ratio: 1.5 / 1; /* Typical landscape ratio */
 }
 
 .image-card.dragging {

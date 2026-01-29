@@ -17,9 +17,10 @@
     <div class="controls">
         <select id="objectSelect" onchange="switchObject()">
             <option value="M31">M31</option>
+            <option value="M31_2026" selected>M31_2026</option>
             <option value="M42">M42</option>
             <option value="M45">M45</option>
-            <option value="M45_2026" selected>M45_2026</option>
+            <option value="M45_2026">M45_2026</option>
         </select>
     </div>
     <div id="imageContainer" class="image-grid"></div>
@@ -42,28 +43,30 @@
                 // Load object configuration
                 const objectConfig = await window.imageLoader.loadObjectConfig(selected);
                 
-                // Update grid layout
-                const container = document.getElementById('imageContainer');
-                container.style.setProperty('--grid-cols', objectConfig.gridColumns);
-                container.style.gridTemplateColumns = `repeat(${objectConfig.gridColumns}, 1fr)`;
-                
-                // Calculate image size to show 3.5 rows on screen
-                const numCols = objectConfig.gridColumns;
-                const rowsToShow = 3.5; // Show 3.5 rows
-                const gap = 5; // gap in pixels
-                const padding = 10; // body padding (5px * 2 sides)
-                const controlsHeight = 60; // approximate controls height
-                const availableHeight = window.innerHeight - padding - controlsHeight;
-                const availableWidth = window.innerWidth - (padding * 2);
-                
-                // Calculate size per image
-                const rowHeight = (availableHeight - (gap * (rowsToShow - 1))) / rowsToShow;
-                const colWidth = (availableWidth - (gap * (numCols - 1))) / numCols;
-                const imageSize = Math.min(rowHeight, colWidth);
-                
-                // Set grid to use fixed sizes
-                container.style.gridAutoRows = `${imageSize}px`;
-                container.style.gap = `${gap}px`;
+                // Update grid layout (skip for M31_2026 - handled in shared.js)
+                if (selected !== 'M31_2026') {
+                    const container = document.getElementById('imageContainer');
+                    container.style.setProperty('--grid-cols', objectConfig.gridColumns);
+                    container.style.gridTemplateColumns = `repeat(${objectConfig.gridColumns}, 1fr)`;
+                    
+                    // Calculate image size to show 3.5 rows on screen
+                    const numCols = objectConfig.gridColumns;
+                    const rowsToShow = 3.5; // Show 3.5 rows
+                    const gap = 5; // gap in pixels
+                    const padding = 10; // body padding (5px * 2 sides)
+                    const controlsHeight = 60; // approximate controls height
+                    const availableHeight = window.innerHeight - padding - controlsHeight;
+                    const availableWidth = window.innerWidth - (padding * 2);
+                    
+                    // Calculate size per image
+                    const rowHeight = (availableHeight - (gap * (rowsToShow - 1))) / rowsToShow;
+                    const colWidth = (availableWidth - (gap * (numCols - 1))) / numCols;
+                    const imageSize = Math.min(rowHeight, colWidth);
+                    
+                    // Set grid to use fixed sizes
+                    container.style.gridAutoRows = `${imageSize}px`;
+                    container.style.gap = `${gap}px`;
+                }
                 
                 // Load images using shared module
                 window.loadImages(objectConfig);

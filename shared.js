@@ -50,33 +50,103 @@ window.loadImages = async function(objectConfig) {
         document.body.appendChild(overlay);
     }
     
-    // Track loading progress
-    let loadedImages = 0;
-    const totalImages = shuffledImages.length;
+    // Load all images first to detect aspect ratios
+    const imagePromises = shuffledImages.map(imageData => {
+        return new Promise((resolve) => {
+            const imagePath = `${objectConfig.folder}/${imageData.filename}`;
+            const img = new Image();
+            img.onload = () => {
+                const aspectRatio = img.width / img.height;
+                const isSquare = aspectRatio >= 0.9 && aspectRatio <= 1.1; // Allow small tolerance
+                resolve({
+                    imageData,
+                    imagePath,
+                    aspectRatio,
+                    isSquare,
+                    width: img.width,
+                    height: img.height
+                });
+            };
+            img.onerror = () => {
+                // Default to square if we can't load
+                resolve({
+                    imageData,
+                    imagePath,
+                    aspectRatio: 1,
+                    isSquare: true,
+                    width: 0,
+                    height: 0
+                });
+            };
+            img.src = imagePath;
+        });
+    });
     
-    const checkAllLoaded = () => {
-        loadedImages++;
-        if (loadedImages === totalImages) {
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => {
-                loadingOverlay.remove();
-            }, 300);
-        }
-    };
-
-    // Create and load all images
-    shuffledImages.forEach(imageData => {
+    const loadedImageData = await Promise.all(imagePromises);
+    
+    // Group images by aspect ratio: square first, then landscape
+    const squareImages = loadedImageData.filter(img => img.isSquare);
+    const landscapeImages = loadedImageData.filter(img => !img.isSquare);
+    
+    // Combine: square images first, then landscape
+    const groupedImages = [...squareImages, ...landscapeImages];
+    
+    // Update grid layout: 4 columns for both square and landscape rows
+    container.style.setProperty('--grid-cols', '4');
+    container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+    
+    // Calculate image size based on viewport
+    const gap = 5;
+    const padding = 10;
+    const controlsHeight = 60;
+    const availableWidth = window.innerWidth - (padding * 2);
+    const availableHeight = window.innerHeight - padding - controlsHeight;
+    
+    // Calculate how many rows we'll have
+    const squareRows = Math.ceil(squareImages.length / 4);
+    const landscapeRows = Math.ceil(landscapeImages.length / 4);
+    const totalRows = squareRows + landscapeRows;
+    
+    // Calculate column width (4 columns)
+    const colWidth = (availableWidth - (gap * 3)) / 4;
+    
+    // Calculate row heights: square rows need colWidth height, landscape rows need colWidth/1.5 height
+    const squareRowHeight = colWidth; // Square: 1:1 ratio
+    const landscapeRowHeight = colWidth / 1.5; // Landscape: 1.5:1 ratio
+    
+    // Calculate total height needed
+    const totalHeightNeeded = (squareRows * squareRowHeight) + (landscapeRows * landscapeRowHeight) + (gap * (totalRows - 1));
+    
+    // Scale down if needed to fit viewport
+    let scale = 1;
+    if (totalHeightNeeded > availableHeight) {
+        scale = availableHeight / totalHeightNeeded;
+    }
+    
+    const finalColWidth = colWidth * scale;
+    
+    // Set grid to use auto rows - CSS aspect-ratio will handle sizing
+    container.style.gridAutoRows = 'auto';
+    container.style.gap = `${gap}px`;
+    
+    // Store the calculated width for potential use
+    container.dataset.calculatedWidth = finalColWidth;
+    
+    // Create cards for all images
+    groupedImages.forEach(({ imageData, imagePath, isSquare, aspectRatio }) => {
         const card = document.createElement('div');
         card.className = 'image-card';
         card.draggable = true;
         
-        const imagePath = `${objectConfig.folder}/${imageData.filename}`;
-        
-        // Preload image
-        const img = new Image();
-        img.onload = checkAllLoaded;
-        img.onerror = checkAllLoaded;
-        img.src = imagePath;
+        // Add aspect ratio class for CSS styling
+        if (isSquare) {
+            card.classList.add('image-square');
+            card.style.aspectRatio = '1';
+        } else {
+            card.classList.add('image-landscape');
+            // Use actual aspect ratio from image
+            card.style.aspectRatio = `${aspectRatio}`;
+        }
         
         card.innerHTML = `
             <img src="${imagePath}" alt="Image ${imageData.filename}" draggable="false">
@@ -93,6 +163,12 @@ window.loadImages = async function(objectConfig) {
         
         container.appendChild(card);
     });
+    
+    // Remove loading overlay
+    loadingOverlay.style.opacity = '0';
+    setTimeout(() => {
+        loadingOverlay.remove();
+    }, 300);
 
     // Add rankings after all images are loaded
     updateRankings();
@@ -143,6 +219,10 @@ function showFullscreenImage(index, overlay) {
     const nextImg = nextCard.querySelector('img');
     const numberEl = card.querySelector('.filename');
     const nextNumberEl = nextCard.querySelector('.filename');
+    
+    // Start in blink mode by default
+    window.sliderVisible = false;
+    window.showingFirst = true;
     
     // Get display number (use filename number for consistency)
     const number = window.showFullNames ? numberEl.dataset.fullName : numberEl.dataset.filenameNumber;
@@ -205,11 +285,9 @@ function showFullscreenImage(index, overlay) {
         isResizing = false;
     });
 
-    // Maintain current mode
-    if (!window.sliderVisible) {
-        slider.classList.add('hidden');
-        leftSide.style.width = window.showingFirst ? '100%' : '0%';
-    }
+    // Start in blink mode (slider hidden, showing first image)
+    slider.classList.add('hidden');
+    leftSide.style.width = '100%';
 }
 
 function handleDragStart(e) {
